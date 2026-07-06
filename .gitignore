@@ -1,0 +1,35 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Sensitive files (Keys, Certificates, Secrets)
+*.pem
+*.crt
+*.key
+*.p12
+*.pfx
+data/nginx/certs/
+
+# IDE and Editor folders
+.idea/
+.vscode/
+*.swp
+
+# Go Build artifacts
+tmp
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+go-backend
+bin/
+
+# Dependency directories
+vendor/
+
+# Air temp files
+.air.toml

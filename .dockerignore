@@ -1,0 +1,29 @@
+# Ignore pre-compiled binary
+go-backend
+
+# Ignore local hot-reload / build temp folders
+tmp/
+.air.toml
+
+# Ignore env file and git metadata
+.env
+.git
+.gitignore
+Dockerfile
+docs/
+
+.dockerignore
+Dockerfile
+Mackefile
+
+# Kỹ thuật dockerignore để ignore trong lệnh COPY . .
+
+# Sensitive files (Keys, Certificates)
+*.pem
+*.crt
+*.key
+data/nginx/certs/
+
+# Ignore all environment files
+.env.*
+!.env.example

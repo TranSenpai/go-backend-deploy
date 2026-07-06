@@ -1,0 +1,123 @@
+services:
+  go-redis:
+    container_name: go-redis
+    image: docker.io/library/redis:latest
+    command: redis-server --requirepass ${REDIS_PASS}
+    volumes:
+      - go-redis:/data
+    expose:
+      - 6379
+    networks:
+      - go-network
+  
+# docker exec -it go-elastic /usr/share/elasticsearch/bin/elasticsearch-reset-password -u elastic
+# docker exec -it go-kibana /usr/share/elasticsearch/bin/elasticsearch-create-enrollment-token -s kibana
+# docker exec go-elastic cat /usr/share/elasticsearch/config/certs/http_ca.crt | openssl x509 -fingerprint -sha256 -noout
+# docker run --name es01 --net elastic -p 9200:9200 -it -m 1GB docker.elastic.co/elasticsearch/elasticsearch:9.4.3
+  go-elastic:
+    container_name: go-elastic
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.4.3
+    volumes:
+      - go-elastic:/usr/share/elasticsearch/data
+    ports:
+      - 9200:9200
+    environment:
+      - discovery.type=single-node
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - xpack.security.enabled=true
+    mem_limit: 1G
+    networks:
+      - go-network
+
+# docker run --name kib01 --net elastic -p 5601:5601 docker.elastic.co/kibana/kibana:9.4.3
+  go-kibana:
+    container_name: go-kibana
+    image: docker.elastic.co/kibana/kibana:9.4.3
+    ports:
+      - 5601:5601
+    networks:
+      - go-network
+
+# $ docker run --detach --hostname my-rabbit --name some-rabbit \
+#     --env RABBITMQ_DEFAULT_USER=user \
+#     --env RABBITMQ_DEFAULT_PASS=password \
+#     --publish 15672:15672 \
+#     --publish 5672:5672 \
+#      rabbitmq:management
+  go-rabbitmq:
+    container_name: go-rabbitmq
+    image: docker.io/library/rabbitmq:management
+    volumes:
+      - go-rabbitmq:/var/lib/rabbitmq
+    ports:
+      - 5672:5672
+      - 15672:15672
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
+    networks:
+      - go-network
+
+  go-mysql:
+    container_name: go-mysql
+    image: docker.io/library/mysql:latest
+    volumes:
+      - go-mysql:/var/lib/mysql
+    ports:
+      - 3306:3306
+    environment:
+      - MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+      - MYSQL_DATABASE=go_backend
+    networks:
+      - go-network
+    # Ping kiểm tra MySQL mỗi 5s, nếu ping thành công thì trạng thái container là 'healthy'
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  go-backend:
+    container_name: go-backend
+    image: img-go-backend:latest
+    ports:
+      - 8000:8080
+    env_file:
+      - .env.production
+    networks:
+      - go-network
+    # Backend phải đợi MySQL báo 'healthy' (khởi động hoàn tất) thì mới bắt đầu chạy, tránh lỗi connection refused
+    depends_on:
+      go-redis:
+        condition: service_started
+      go-elastic:
+        condition: service_started
+      go-rabbitmq:
+        condition: service_started
+      go-mysql:
+        condition: service_healthy
+
+  go-nginx:
+    container_name: go-nginx
+    image: docker.io/library/nginx:1.27-alpine
+    ports:
+    # Port default
+      - 80:80
+    # SSL
+      - 443:443
+    volumes:
+      - ./data/nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./data/nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - go-network
+
+networks:
+  go-network:
+    external: true
+
+
+volumes:
+  go-redis:
+  go-elastic:
+  go-rabbitmq:
+  go-mysql:
