@@ -51,6 +51,8 @@ jobs:
 
                     cd /home/ubuntu/go-backend
 
+                    git pull origin main
+
                     sudo docker compose --env-file .env.production up -d
 
                     sudo docker image prune -f || true
