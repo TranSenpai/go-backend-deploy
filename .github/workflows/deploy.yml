@@ -34,6 +34,14 @@ jobs:
             - name: Install Atlas
               uses: ariga/setup-atlas@v0
 
+            - name: Ensure Database service is running
+              run: |
+                  ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" << 'EOF'
+                    cd /home/ubuntu/go-backend
+                    sudo docker compose --env-file .env.production up -d go-mysql
+                  EOF
+                  sleep 10
+
             - name: Run migration
               run: |
                   ssh -fN \
