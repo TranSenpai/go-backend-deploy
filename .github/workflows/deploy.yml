@@ -31,18 +31,18 @@ jobs:
               run: |
                   docker save img-go-backend:latest | gzip | ssh "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" "gunzip | sudo docker load"
 
-            # - name: Install Atlas
-            #   uses: ariga/setup-atlas@v0
+            - name: Install Atlas
+              uses: ariga/setup-atlas@v0
 
-            # - name: Run migration
-            #   run: |
-            #       ssh -fN \
-            #       -L 3307:127.0.0.1:3306 \
-            #       "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 
+            - name: Run migration
+              run: |
+                  ssh -fN \
+                  -L 3307:127.0.0.1:3306 \
+                  "${{ secrets.SERVER_USER }}@${{ secrets.SERVER_HOST }}" 
 
-            #       atlas migrate apply \
-            #       --dir "file://${GITHUB_WORKSPACE}/ent/migrate/migrations" \
-            #       --url "${{ secrets.DATABASE_URL }}"
+                  atlas migrate apply \
+                  --dir "file://${GITHUB_WORKSPACE}/ent/migrate/migrations" \
+                  --url "${{ secrets.DATABASE_URL }}"
 
             - name: restart services
               run: |
